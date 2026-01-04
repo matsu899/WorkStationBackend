@@ -80,7 +80,15 @@ class ComponentViewSet(viewsets.ModelViewSet):
 class BinViewSet(viewsets.ModelViewSet):
     queryset = Bin.objects.all()
     serializer_class = BinSerializer
-    permission_classes = [ManagementOrService]  # Jen management a service mohou spravovat
+    permission_classes = [ManagementOrService]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        code = self.request.query_params.get("bin_code")
+        if code:
+            qs = qs.filter(bin_code=code)
+        return qs
+
 
 # =============================================================================
 # TYPY SESTAV - VIEWSETY
@@ -138,7 +146,7 @@ class AssemblyStepViewSet(viewsets.ModelViewSet):
         - requirements: Seznam požadovaných komponent s pozicemi, kde se nacházejí
         """
         step = self.get_object()
-        organizer_id = request.query_params.get("organizer_id")
+        organizer_id = request.query_params.get("organizer_id") or request.query_params.get("organizer")
         if not organizer_id:
             return Response({"detail": "organizer_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -503,3 +511,20 @@ class OrganizerSlotStateViewSet(viewsets.ModelViewSet):
             {"detail": "scan stored", "session_id": session_id, "updated_positions": sorted(updated_positions)},
             status=status.HTTP_200_OK,
         )
+    def get_queryset(self):
+        qs = super().get_queryset()
+
+        organizer = self.request.query_params.get("organizer")
+        position = self.request.query_params.get("position")
+        session_id = self.request.query_params.get("session_id")
+
+        if organizer is not None:
+            qs = qs.filter(organizer_id=organizer)
+
+        if position is not None:
+            qs = qs.filter(position=position)
+
+        if session_id is not None:
+            qs = qs.filter(session_id=session_id)
+
+        return qs
