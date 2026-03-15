@@ -364,37 +364,39 @@ class OrganizerSlotState(models.Model):
     organizer = models.ForeignKey(
         Organizer,
         on_delete=models.CASCADE,
-        related_name="slot_states"  # Pozice v tomto organizéru
+        related_name="slot_states"
     )
-
-    position = models.PositiveIntegerField()  # Pořadí pozice (např. police číslo)
-    
+    position = models.PositiveIntegerField()
     bin = models.ForeignKey(
         Bin,
         null=True,
         blank=True,
-        on_delete=models.PROTECT  # Chránit smazání zásobníku, který je umístěn
+        on_delete=models.PROTECT
     )
+    is_present = models.BooleanField(default=False)
 
-    is_present = models.BooleanField(default=False)  # Je zásobník na pozici?
-
-    # Stav obsahu zjištěný pomocí vize (umělá inteligence)
     is_empty = models.BooleanField(
         null=True,
         blank=True,
         help_text="None = unknown, True = empty, False = contains parts"
     )
+    last_seen = models.DateTimeField(null=True, blank=True)
+    session_id = models.UUIDField(db_index=True, default=uuid.uuid4)
 
-    last_seen = models.DateTimeField(null=True, blank=True)  # Poslední kontrola
-    session_id = models.UUIDField(db_index=True, default=uuid.uuid4)  # ID relace
+    led_section = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Physical LED/light-gate section number for this slot"
+    )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["organizer", "position"],
-                name="uniq_position_per_organizer"  # V organizéru je pořadí pozice unikátní
-            )
+                name="uniq_position_per_organizer"
+            ),
+            models.UniqueConstraint(
+                fields=["organizer", "led_section"],
+                name="uniq_led_section_per_organizer"
+            ),
         ]
-
-    def __str__(self):
-        return f"{self.organizer} pos {self.position}"
