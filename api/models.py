@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 import uuid
 from django.utils.crypto import get_random_string
+import uuid
 
 # =============================================================================
 # OPERÁTOR A ROLE OPERÁTORA
@@ -75,26 +76,29 @@ class OperatorRoleAssignment(models.Model):
 
 def generate_component_code():
     """Generuje jedinečný kód pro komponentu ve formátu CMP-XXXXXXXXXX"""
+    return f"CMP-{uuid.uuid4().hex[:10].upper()}"
 
 class Component(models.Model):
-    # Model komponenty - součásti, které se používají v sestavách
-    name = models.CharField(max_length=200)  # Název komponenty
-    description = models.TextField(blank=True)  # Popis
-    unit = models.CharField(max_length=50, default="pcs")  # Jednotka (např. ks)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    unit = models.CharField(max_length=50, default="pcs")
 
     component_code = models.CharField(
         max_length=32,
         unique=True,
         db_index=True,
-        editable=False  # Automaticky generovaný kód
+        editable=False
     )
 
-    image_path = models.CharField(max_length=200, blank=True)  # Cesta k obrázku
+    image_path = models.CharField(max_length=200, blank=True)
 
     def save(self, *args, **kwargs):
-        # Při vytvoření komponenty se automaticky generuje unikátní kód
         if not self.component_code:
-            self.component_code = generate_component_code()
+            while True:
+                code = generate_component_code()
+                if not Component.objects.filter(component_code=code).exists():
+                    self.component_code = code
+                    break
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -124,9 +128,12 @@ class Bin(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        # Při vytvoření zásobníku se automaticky generuje unikátní kód
         if not self.bin_code:
-            self.bin_code = generate_bin_code()
+            while True:
+                code = generate_bin_code()
+                if not Bin.objects.filter(bin_code=code).exists():
+                    self.bin_code = code
+                    break
         super().save(*args, **kwargs)
 
     def __str__(self):
