@@ -15,6 +15,7 @@ from .models import (
     ErrorType,
     ErrorLog,
     EventLog,
+    OrganizerSlotState,
 )
 
 
@@ -43,3 +44,9 @@ class OperatorRoleAssignmentAdmin(admin.ModelAdmin):
     list_filter = ("role", "is_active")
     search_fields = ("operator__name", "role__role_name")
 
+@admin.register(OrganizerSlotState)
+class OrganizerSlotStateAdmin(admin.ModelAdmin):
+    list_display = ("id", "organizer", "position", "bin", "is_present", "led_section")
+    list_filter = ("organizer", "is_present")
+    search_fields = ("bin__bin_code",)
+    ordering = ("organizer", "position")
